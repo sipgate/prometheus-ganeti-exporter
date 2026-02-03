@@ -528,6 +528,66 @@ class GanetiCollector():
 
         return [job_status, job_start_time, job_end_time]
 
+    def _get_cluster_exclusion_tags(self) -> list:
+        """Extract exclusion tag groups from cluster tags (htools:iextags:*)"""
+        cluster_tags = self.cluster_info.get('tags', [])
+        exclusion_tags = []
+
+        for tag in cluster_tags:
+            if tag.startswith('htools:iextags:'):
+                exclusion_tag = tag.split(':', 2)[2]
+                exclusion_tags.append(exclusion_tag)
+
+        logging.debug('Found cluster exclusion tags: %s', exclusion_tags)
+        return exclusion_tags
+
+
+    def collect_instance_tag_metrics(self, instances: Iterable[dict]) -> Iterable[Metric]:
+        """Check for exclusion tag violations cluster-wide"""
+        exclusion_tags = self._get_cluster_exclusion_tags()
+        if not exclusion_tags:
+            logging.debug('No exclusion tags configured in cluster')
+            return []
+
+        tag_instances = {}
+
+        for instance in instances:
+            if not instance.get('oper_state'):
+                continue
+
+            pnode = instance.get('pnode')
+            if not pnode:
+                continue
+
+            for instance_tag in instance.get('tags', []):
+                for exclusion_tag in exclusion_tags:
+                    if instance_tag.startswith(f'{exclusion_tag}:'):
+                        if instance_tag not in tag_instances:
+                            tag_instances[instance_tag] = []
+                        tag_instances[instance_tag].append({
+                            'name': instance['name'],
+                            'pnode': pnode
+                        })
+                        break
+
+        has_violations = False
+        for tag, instances_list in tag_instances.items():
+            pnodes = [inst['pnode'] for inst in instances_list]
+            if len(pnodes) != len(set(pnodes)):
+                has_violations = True
+                for pnode in set(pnodes):
+                    instances_on_node = [inst['name'] for inst in instances_list if inst['pnode'] == pnode]
+                    if len(instances_on_node) > 1:
+                        logging.debug('Exclusion tag violation: tag=%s node=%s instances=%s',
+                                      tag, pnode, ','.join(instances_on_node))
+
+        labels = ['cluster']
+        health = self._create_gauge('instance', 'exclusion_tag_health', labels,
+                description='Exclusion tag health (1=healthy, 0=violations exist)')
+
+        health.add_metric((self.cluster_name,), 0 if has_violations else 1)
+
+        return [health]
 
     def collect_hspace_metrics(self, data: dict) -> Iterable[Metric]:
         """Create metrics based on data returned by hspace"""
@@ -580,6 +640,7 @@ class GanetiCollector():
         metrics.extend(self.collect_vcpu_allocation(nodes, instances))
         metrics.extend(self.collect_job_metrics(jobs))
         metrics.extend(self.collect_cluster_verify_metrics(jobs))
+        metrics.extend(self.collect_instance_tag_metrics(instances))
         if hspace_data is not None:
             metrics.extend(self.collect_hspace_metrics(hspace_data))
         if hbal_data is not None:
