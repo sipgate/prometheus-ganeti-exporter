@@ -1,6 +1,7 @@
 [Unit]
 Description=Prometheus Ganeti Exporter
 After=network.target
+ConditionPathExists=/etc/ganeti/prometheus.ini
 
 [Service]
 Type=simple
@@ -8,7 +9,6 @@ Restart=always
 # You should create/use a non-privileged user for this service!
 # User=prometheus
 ExecStart=/usr/bin/prometheus-ganeti-exporter
-ConditionPathExists=/etc/ganeti/prometheus.ini
 
 [Install]
 WantedBy=multi-user.target
