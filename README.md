@@ -1,6 +1,16 @@
 # prometheus-ganeti-exporter
 
-Welcome to the home of `prometheus-ganeti-exporter. You can use this software to publish [Ganeti](https://www.ganeti.org/) cluster statistics to [Prometheus](https://prometheus.io/). It has been initially developed by Wikimedia Foundation and is now part of the Ganeti project.
+Welcome to the home of `prometheus-ganeti-exporter`. You can use this software to publish [Ganeti](https://www.ganeti.org/) cluster statistics to [Prometheus](https://prometheus.io/). It has been initially developed by Wikimedia Foundation and is now part of the Ganeti project.
+
+## Installation
+
+### From Source
+
+For production use, install the package:
+
+```shell
+pip install .
+```
 
 ## Usage
 
@@ -8,7 +18,7 @@ You can use the provided [systemd service file](./prometheus-ganeti-exporter.ser
 
 ## Configuration
 
-The service expects its configuration file in `/etc/ganeti/prometheus.ini` (an alternative path can provided through the ``--config`` parameter). Please see [prometheus.ini.example](./prometheus.ini.example) for an example configuration. Please make sure the file is only readable to the service user as it contains RAPI credentials.
+The service expects its configuration file in `/etc/ganeti/prometheus.ini` (an alternative path can be provided through the ``--config`` parameter). Please see [prometheus.ini.example](./prometheus.ini.example) for an example configuration. Please make sure the file is only readable to the service user as it contains RAPI credentials.
 
 ## Integration of htools
 
@@ -31,3 +41,17 @@ You may set the logging level using the argument `--loglevel [error|warning|info
 ## Grafana
 
 If you use [Prometheus](https://prometheus.io/) with [Grafana](https://grafana.com/) you may want to take a look at the [example overview dashboard](./example-grafana-dashboard-overview.json) or the [example details dashboard](./example-grafana-dashboard-details.json). All dashboards in this repository are released under the [BSD 2-Clause License](./LICENSE).
+
+## Development
+
+For development, install in editable mode with dev dependencies:
+
+```shell
+pip install -e ".[dev]"
+```
+
+Run the tests locally:
+
+```shell
+PYTHONPATH=src python3 -m pytest
+```
