@@ -53,6 +53,20 @@ def mock_cluster_info():
 
 
 @pytest.fixture
+def mock_cluster_info_with_exclusion_tags():
+    """Mock Ganeti cluster info with htools exclusion tags configured"""
+    return {
+        'name': 'test-cluster',
+        'version': '3.0.0',
+        'tags': [
+            'htools:iextags:gpu',
+            'htools:iextags:ssd',
+            'some:other:tag',
+        ]
+    }
+
+
+@pytest.fixture
 def sample_config():
     """Sample valid configuration dictionary"""
     return {
