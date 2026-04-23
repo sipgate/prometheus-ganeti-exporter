@@ -261,7 +261,7 @@ class GanetiCollector():
             label_values = (self.cluster_name, node['name'])
             vm_capable = node['vm_capable']
             vm_capable_metric.add_metric(label_values, 1 if vm_capable else 0)
-            vm_capable_only_metrics = ['dfree', 'dtotal', 'mfree', 'mtotal']
+            vm_capable_only_metrics = ['ctotal', 'dfree', 'dtotal', 'mfree', 'mtotal']
             for metric_name in node.keys():
                 if metric_name not in self._metric_family:
                     continue
