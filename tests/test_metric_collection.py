@@ -97,9 +97,8 @@ class TestNodeMetricCollection:
     @patch('prometheus_ganeti_exporter.__main__.requests.get')
     def test_collect_node_metrics_arbitrator_node(
             self, mock_get, sample_config, mock_cluster_info):
-        """Arbitrator nodes (vm_capable=False) must not emit disk/memory
-        metrics, but must appear in ctotal, pinst_cnt, sinst_cnt and
-        vm_capable."""
+        """Arbitrator nodes (vm_capable=False) must only emit vm_capable,
+        not CPU/disk/memory or instance-count metrics."""
         mock_get.return_value = Mock(status_code=200, json=lambda: mock_cluster_info)
 
         collector = GanetiCollector(sample_config)
@@ -117,7 +116,6 @@ class TestNodeMetricCollection:
             },
             {
                 'name': 'arbitrator.example.com',
-                'ctotal': 2,
                 'dfree': None,
                 'dtotal': None,
                 'mfree': None,
@@ -138,17 +136,10 @@ class TestNodeMetricCollection:
         assert values['node1.example.com'] == 1
         assert values['arbitrator.example.com'] == 0
 
-        # ctotal, pinst_cnt, sinst_cnt present for arbitrator
-        for name in ('ganeti_node_ctotal', 'ganeti_node_pinst_cnt',
-                     'ganeti_node_sinst_cnt'):
-            assert name in metric_names
-            metric = next(m for m in metrics if m.name == name)
-            node_names = [s.labels['node'] for s in metric.samples]
-            assert 'arbitrator.example.com' in node_names
-
-        # disk/memory metrics absent for arbitrator
-        for name in ('ganeti_node_dtotal', 'ganeti_node_dfree',
-                     'ganeti_node_mtotal', 'ganeti_node_mfree'):
+        # CPU/disk/memory/instance-count metrics absent for arbitrator
+        for name in ('ganeti_node_ctotal', 'ganeti_node_dtotal', 'ganeti_node_dfree',
+                     'ganeti_node_mtotal', 'ganeti_node_mfree',
+                     'ganeti_node_pinst_cnt', 'ganeti_node_sinst_cnt'):
             if name in metric_names:
                 metric = next(m for m in metrics if m.name == name)
                 node_names = [s.labels['node'] for s in metric.samples]
